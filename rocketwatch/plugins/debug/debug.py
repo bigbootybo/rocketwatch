@@ -6,6 +6,8 @@ import humanize
 from discord import File
 from discord.commands import slash_command, Option
 from discord.ext import commands
+from discord.ui import View, Button
+from discord.enums import ButtonStyle
 
 from utils import solidity
 from utils.cfg import cfg
@@ -15,6 +17,20 @@ from utils.shared_w3 import w3
 from utils.slash_permissions import guilds
 from utils.slash_permissions import owner_only_slash
 
+
+class TestButton(Button):
+    def __init__(self, id):
+        super().__init__(
+            label=f"Button {id}",
+            style=ButtonStyle.primary,
+            custom_id=str(id),
+        )
+
+    async def callback(self, interaction):
+        await interaction.response.send_message(
+            f"You clicked button {self.custom_id}!",
+            ephemeral=True
+        )
 
 class Debug(commands.Cog):
     def __init__(self, bot):
@@ -98,6 +114,16 @@ class Debug(commands.Cog):
         data = contract.decode_function_input(tnx.input)
         await ctx.respond(f"```Input:\n{data}```", ephemeral=True)
 
+    @owner_only_slash()
+    async def test_buttons(self, ctx):
+        view = View(timeout=None)
+
+        # loop through the list of roles and add a new button to the view for each role
+        for role_id in range(10):
+            # get the role the guild by ID
+            view.add_item(TestButton(role_id))
+
+        await ctx.respond("Click a button to assign yourself a role", view=view)
 
 def setup(bot):
     bot.add_cog(Debug(bot))
